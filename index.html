@@ -7,8 +7,70 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="theme-color" content="#F1EFE8">
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #F1EFE8;
+      --text: #2C2C2A;
+      --muted: #5F5E5A;
+      --line: #D3D1C7;
+      --accent: #D85A30;
+    }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 17px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    main {
+      max-width: 40rem;
+      margin: 0 auto;
+      padding: 4rem 1rem 2rem;
+    }
+    h1 {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      margin: 0 0 1.5rem;
+      font-size: 2rem;
+      font-weight: 600;
+    }
+    h1::before {
+      content: "";
+      width: .45em;
+      height: .45em;
+      background: var(--accent);
+    }
+    ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    li {
+      padding: .75rem 0;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+    }
+    li:last-child {
+      border-bottom: 1px solid var(--line);
+    }
+    a {
+      color: var(--text);
+      text-decoration-color: var(--accent);
+      text-decoration-thickness: 2px;
+      text-underline-offset: 3px;
+    }
+    li > a:first-child {
+      font-weight: 600;
+    }
+    a:hover {
+      color: var(--accent);
+    }
+  </style>
 </head>
 <body>
+  <main>
   <h1>Thohig</h1>
   <ul>
     <li>
@@ -32,5 +94,6 @@
       (<a href="https://github.com/Thohig/tornet">källkod</a>)
     </li>
   </ul>
+  </main>
 </body>
 </html>
