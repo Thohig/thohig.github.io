@@ -73,53 +73,23 @@
     a:hover {
       color: var(--accent);
     }
-    .weather li {
-      display: grid;
-      grid-template-columns: 24px 1fr auto;
-      grid-template-areas: "icon day temp" "icon desc desc";
+    .weather {
+      display: flex;
       align-items: center;
-      column-gap: .75rem;
-    }
-    .weather svg {
-      grid-area: icon;
-    }
-    .weather .day {
-      grid-area: day;
+      gap: .5rem;
+      margin: 0;
+      color: var(--muted);
     }
     .weather .temp {
-      grid-area: temp;
-    }
-    .weather .desc {
-      grid-area: desc;
-      font-size: .9rem;
-    }
-    .weather .day,
-    .weather .max {
       font-weight: 600;
       color: var(--text);
-    }
-    @media (min-width: 52rem) {
-      main:has(#weather:not([hidden])) {
-        max-width: 62rem;
-      }
-      .columns:has(#weather:not([hidden])) {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) 17rem;
-        gap: 3rem;
-      }
-    }
-    .source {
-      margin: .5rem 0 0;
-      font-size: .8rem;
-      color: var(--muted);
     }
   </style>
 </head>
 <body>
   <main>
   <h1>Thohig</h1>
-  <div class="columns">
-  <section>
+  <p id="weather" class="weather" title="Väderdata från Open-Meteo" hidden></p>
   <h2>Spel</h2>
   <ul>
     <li>
@@ -143,13 +113,6 @@
       (<a href="https://github.com/Thohig/tornet">källkod</a>)
     </li>
   </ul>
-  </section>
-  <section id="weather" hidden>
-    <h2>Väder i Göteborg</h2>
-    <ul class="weather"></ul>
-    <p class="source">Data från <a href="https://open-meteo.com/">Open-Meteo</a></p>
-  </section>
-  </div>
   </main>
   <script>
     (async () => {
@@ -162,20 +125,10 @@
         snow:  ["...ll...", ".lllll..", "llllllll", "........", ".l...l..", "...l...l", ".l...l..", "........"],
         storm: ["...ll...", ".lllll..", "dddddddd", "....a...", "...aa...", "..aaaa..", "....a...", "...a...."]
       };
-      // WMO weather codes → icon and description
-      const describe = code => {
-        if (code <= 1) return ["sun", code === 0 ? "Klart" : "Mestadels klart"];
-        if (code === 2) return ["part", "Halvklart"];
-        if (code === 3) return ["cloud", "Mulet"];
-        if (code <= 48) return ["cloud", "Dimma"];
-        if (code <= 57) return ["rain", "Duggregn"];
-        if (code <= 65) return ["rain", "Regn"];
-        if (code <= 67) return ["rain", "Underkylt regn"];
-        if (code <= 77) return ["snow", "Snö"];
-        if (code <= 82) return ["rain", "Regnskurar"];
-        if (code <= 86) return ["snow", "Snöbyar"];
-        return ["storm", "Åska"];
-      };
+      // WMO weather codes → icon
+      const iconFor = code =>
+        code <= 1 ? "sun" : code === 2 ? "part" : code <= 48 ? "cloud"
+        : code <= 67 || (code >= 80 && code <= 82) ? "rain" : code <= 86 ? "snow" : "storm";
       const svg = name => {
         let rects = "";
         icons[name].forEach((row, y) => [...row].forEach((c, x) => {
@@ -184,28 +137,16 @@
         return `<svg width="24" height="24" viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true">${rects}</svg>`;
       };
       const temp = t => `${Math.round(t)}°`.replace("-", "−");
-      const dirs = ["N", "NO", "O", "SO", "S", "SV", "V", "NV"];
-      const weekday = new Intl.DateTimeFormat("sv-SE", { weekday: "long" });
 
       try {
         const url = "https://api.open-meteo.com/v1/forecast?latitude=57.7089&longitude=11.9746"
-          + "&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_direction_10m_dominant"
-          + "&wind_speed_unit=ms&timezone=Europe%2FStockholm&forecast_days=3";
+          + "&current=temperature_2m,weather_code&timezone=Europe%2FStockholm";
         const res = await fetch(url);
         if (!res.ok) return;
-        const d = (await res.json()).daily;
-        const list = document.querySelector("#weather ul");
-        d.time.forEach((date, i) => {
-          const [icon, text] = describe(d.weather_code[i]);
-          const name = i === 0 ? "Idag" : weekday.format(new Date(date + "T12:00"));
-          const wind = `${Math.round(d.wind_speed_10m_max[i])} m/s ${dirs[Math.round(d.wind_direction_10m_dominant[i] / 45) % 8]}`;
-          const li = document.createElement("li");
-          li.innerHTML = `${svg(icon)}<span class="day">${name[0].toUpperCase() + name.slice(1)}</span>`
-            + `<span class="desc">${text}, ${wind}</span>`
-            + `<span class="temp"><span class="max">${temp(d.temperature_2m_max[i])}</span> / ${temp(d.temperature_2m_min[i])}</span>`;
-          list.append(li);
-        });
-        document.getElementById("weather").hidden = false;
+        const c = (await res.json()).current;
+        const el = document.getElementById("weather");
+        el.innerHTML = `Göteborg: ${svg(iconFor(c.weather_code))}<span class="temp">${temp(c.temperature_2m)}</span>`;
+        el.hidden = false;
       } catch {}
     })();
   </script>
