@@ -73,23 +73,11 @@
     a:hover {
       color: var(--accent);
     }
-    .weather {
-      margin: 0;
-      color: var(--muted);
-    }
-    .weather svg {
-      vertical-align: -2px;
-      margin: 0 .3em 0 .1em;
-    }
-    .weather .temp {
-      color: var(--text);
-    }
   </style>
 </head>
 <body>
   <main>
   <h1>Thohig</h1>
-  <p id="weather" class="weather" title="Väderdata från Open-Meteo" hidden></p>
   <h2>Projekt</h2>
   <ul>
     <li>
@@ -114,43 +102,5 @@
     </li>
   </ul>
   </main>
-  <script>
-    (async () => {
-      const colors = { a: "#D85A30", l: "#B4B2A9", m: "#D3D1C7", d: "#444441" };
-      const icons = {
-        sun:   ["a..aa..a", "........", "...aa...", "a.aaaa.a", "a.aaaa.a", "...aa...", "........", "a..aa..a"],
-        moon:  ["..aaa...", ".aaa....", "aaa.....", "aaa.....", "aaa.....", "aaa.....", ".aaa....", "..aaa..."],
-        nightpart: ["....aa..", "...aa...", "...mmm..", ".mmmmmm.", "mmmlllmm", "llllllll", "........", "........"],
-        part:  ["....a..a", ".....aa.", "...mmaa.", ".mmmmma.", "mmmlllm.", "llllllll", "........", "........"],
-        cloud: ["........", "...mm...", ".mmmmm..", "mmmmmmmm", "llllllll", "........", "........", "........"],
-        rain:  ["...ll...", ".lllll..", "llllllll", "........", ".d..d..d", "d..d..d.", ".d..d..d", "........"],
-        snow:  ["...ll...", ".lllll..", "llllllll", "........", ".l...l..", "...l...l", ".l...l..", "........"],
-        storm: ["...ll...", ".lllll..", "dddddddd", "....a...", "...aa...", "..aaaa..", "....a...", "...a...."]
-      };
-      // WMO weather codes → icon
-      const iconFor = (code, day) =>
-        code <= 1 ? (day ? "sun" : "moon") : code === 2 ? (day ? "part" : "nightpart") : code <= 48 ? "cloud"
-        : code <= 67 || (code >= 80 && code <= 82) ? "rain" : code <= 86 ? "snow" : "storm";
-      const svg = name => {
-        let rects = "";
-        icons[name].forEach((row, y) => [...row].forEach((c, x) => {
-          if (colors[c]) rects += `<rect x="${x}" y="${y}" width="1" height="1" fill="${colors[c]}"/>`;
-        }));
-        return `<svg width="16" height="16" viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true">${rects}</svg>`;
-      };
-      const temp = t => `${Math.round(t)}°`.replace("-", "−");
-
-      try {
-        const url = "https://api.open-meteo.com/v1/forecast?latitude=57.7089&longitude=11.9746"
-          + "&current=temperature_2m,weather_code,is_day&timezone=Europe%2FStockholm";
-        const res = await fetch(url);
-        if (!res.ok) return;
-        const c = (await res.json()).current;
-        const el = document.getElementById("weather");
-        el.innerHTML = `Göteborg: ${svg(iconFor(c.weather_code, c.is_day))}<span class="temp">${temp(c.temperature_2m)}</span>`;
-        el.hidden = false;
-      } catch {}
-    })();
-  </script>
 </body>
 </html>
