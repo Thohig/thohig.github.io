@@ -118,7 +118,9 @@
     (async () => {
       const colors = { a: "#D85A30", l: "#B4B2A9", m: "#D3D1C7", d: "#444441" };
       const icons = {
-        sun:   ["a..aa..a", "........", "..aaaa..", "a.aaaa.a", "a.aaaa.a", "..aaaa..", "........", "a..aa..a"],
+        sun:   ["a..aa..a", "........", "...aa...", "a.aaaa.a", "a.aaaa.a", "...aa...", "........", "a..aa..a"],
+        moon:  ["..aaa...", ".aaa....", "aaa.....", "aaa.....", "aaa.....", "aaa.....", ".aaa....", "..aaa..."],
+        nightpart: ["....aa..", "...aa...", "...mmm..", ".mmmmmm.", "mmmlllmm", "llllllll", "........", "........"],
         part:  ["....a..a", ".....aa.", "...mmaa.", ".mmmmma.", "mmmlllm.", "llllllll", "........", "........"],
         cloud: ["........", "...mm...", ".mmmmm..", "mmmmmmmm", "llllllll", "........", "........", "........"],
         rain:  ["...ll...", ".lllll..", "llllllll", "........", ".d..d..d", "d..d..d.", ".d..d..d", "........"],
@@ -126,8 +128,8 @@
         storm: ["...ll...", ".lllll..", "dddddddd", "....a...", "...aa...", "..aaaa..", "....a...", "...a...."]
       };
       // WMO weather codes → icon
-      const iconFor = code =>
-        code <= 1 ? "sun" : code === 2 ? "part" : code <= 48 ? "cloud"
+      const iconFor = (code, day) =>
+        code <= 1 ? (day ? "sun" : "moon") : code === 2 ? (day ? "part" : "nightpart") : code <= 48 ? "cloud"
         : code <= 67 || (code >= 80 && code <= 82) ? "rain" : code <= 86 ? "snow" : "storm";
       const svg = name => {
         let rects = "";
@@ -140,12 +142,12 @@
 
       try {
         const url = "https://api.open-meteo.com/v1/forecast?latitude=57.7089&longitude=11.9746"
-          + "&current=temperature_2m,weather_code&timezone=Europe%2FStockholm";
+          + "&current=temperature_2m,weather_code,is_day&timezone=Europe%2FStockholm";
         const res = await fetch(url);
         if (!res.ok) return;
         const c = (await res.json()).current;
         const el = document.getElementById("weather");
-        el.innerHTML = `Göteborg: ${svg(iconFor(c.weather_code))}<span class="temp">${temp(c.temperature_2m)}</span>`;
+        el.innerHTML = `Göteborg: ${svg(iconFor(c.weather_code, c.is_day))}<span class="temp">${temp(c.temperature_2m)}</span>`;
         el.hidden = false;
       } catch {}
     })();
