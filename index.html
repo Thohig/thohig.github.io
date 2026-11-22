@@ -74,11 +74,12 @@
       color: var(--accent);
     }
     .weather {
-      display: flex;
-      align-items: center;
-      gap: .5rem;
       margin: 0;
       color: var(--muted);
+    }
+    .weather svg {
+      vertical-align: -2px;
+      margin: 0 .3em 0 .1em;
     }
     .weather .temp {
       font-weight: 600;
@@ -136,7 +137,7 @@
         icons[name].forEach((row, y) => [...row].forEach((c, x) => {
           if (colors[c]) rects += `<rect x="${x}" y="${y}" width="1" height="1" fill="${colors[c]}"/>`;
         }));
-        return `<svg width="24" height="24" viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true">${rects}</svg>`;
+        return `<svg width="16" height="16" viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true">${rects}</svg>`;
       };
       const temp = t => `${Math.round(t)}°`.replace("-", "−");
 
