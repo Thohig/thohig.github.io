@@ -83,7 +83,7 @@
   <main>
   <h1>Thohig</h1>
   <h2>Projekt</h2>
-  <ul>
+  <ul id="active">
     <li>
       <a href="https://thohig.github.io/ormtornet/">Ormtornet</a>
       – Dungeon crawler för 2–8 spelare i webbläsaren, på lokalt nätverk eller från en länk på GitHub Pages
@@ -105,28 +105,50 @@
       (<a href="https://github.com/Thohig/tornet">källkod</a>)
     </li>
   </ul>
+  <h2 id="archive-heading" hidden>Arkiv</h2>
+  <ul id="archive" hidden></ul>
   </main>
   <script>
-    for (const li of document.querySelectorAll("main li")) {
+    const active = document.getElementById("active");
+    const archive = document.getElementById("archive");
+    const cutoff = new Date();
+    cutoff.setMonth(cutoff.getMonth() - 6);
+
+    function lastCommit(li) {
       const source = li.querySelector('a[href^="https://github.com/"]');
-      if (!source) continue;
+      if (!source) return Promise.resolve(null);
       const repo = new URL(source.href).pathname.slice(1);
-      fetch(`https://api.github.com/repos/${repo}/commits?per_page=1`)
+      return fetch(`https://api.github.com/repos/${repo}/commits?per_page=1`)
         .then(r => r.ok ? r.json() : Promise.reject())
-        .then(([commit]) => {
-          const date = new Date(commit.commit.committer.date);
-          const time = document.createElement("time");
-          time.dateTime = date.toISOString();
-          time.textContent = date.toLocaleDateString("sv-SE", {
-            day: "numeric", month: "short", year: "numeric"
-          }).replace(".", "");
-          const line = document.createElement("span");
-          line.className = "updated";
-          line.append("Uppdaterad ", time);
-          li.append(line);
-        })
-        .catch(() => {});
+        .then(([commit]) => new Date(commit.commit.committer.date))
+        .catch(() => null);
     }
+
+    function showDate(li, date) {
+      const time = document.createElement("time");
+      time.dateTime = date.toISOString();
+      time.textContent = date.toLocaleDateString("sv-SE", {
+        day: "numeric", month: "short", year: "numeric"
+      }).replace(".", "");
+      const line = document.createElement("span");
+      line.className = "updated";
+      line.append("Uppdaterad ", time);
+      li.append(line);
+    }
+
+    const items = [...active.children];
+    Promise.all(items.map(lastCommit)).then(dates => {
+      const projects = items.map((li, i) => ({ li, date: dates[i] }));
+      // Newest first; projects without a date keep their order at the end.
+      projects.sort((a, b) => (b.date ?? -Infinity) - (a.date ?? -Infinity) || 0);
+      for (const { li, date } of projects) {
+        if (date) showDate(li, date);
+        (date && date < cutoff ? archive : active).append(li);
+      }
+      const hasArchive = archive.children.length > 0;
+      archive.hidden = !hasArchive;
+      document.getElementById("archive-heading").hidden = !hasArchive;
+    });
   </script>
 </body>
 </html>
