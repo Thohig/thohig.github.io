@@ -135,9 +135,14 @@
     const lastCommit = li => github(li, "/commits?per_page=1")
       .then(commits => commits?.[0] ? new Date(commits[0].commit.committer.date) : null);
 
-    // Sum of bytes per language as reported by GitHub.
-    const codeSize = li => github(li, "/languages")
-      .then(langs => langs ? Object.values(langs).reduce((a, b) => a + b, 0) : null);
+    // Bytes per language as reported by GitHub: total size and largest language.
+    const codeStats = li => github(li, "/languages").then(langs => {
+      const entries = Object.entries(langs ?? {});
+      if (!entries.length) return null;
+      const size = entries.reduce((sum, [, bytes]) => sum + bytes, 0);
+      const [language] = entries.reduce((a, b) => (b[1] > a[1] ? b : a));
+      return { size, language };
+    });
 
     function formatSize(bytes) {
       const [value, unit] = bytes >= 1e6 ? [bytes / 1e6, "MB"] : [bytes / 1e3, "kB"];
@@ -145,7 +150,7 @@
       return value.toLocaleString("sv-SE", { maximumFractionDigits: digits }) + " " + unit;
     }
 
-    function showInfo(li, date, size) {
+    function showInfo(li, date, code) {
       const parts = [];
       if (date) {
         const time = document.createElement("time");
@@ -155,7 +160,7 @@
         }).replace(".", "");
         parts.push(["Uppdaterad ", time]);
       }
-      if (size) parts.push([formatSize(size) + " kod"]);
+      if (code) parts.push([`${formatSize(code.size)} kod, mest ${code.language}`]);
       if (!parts.length) return;
       const line = document.createElement("span");
       line.className = "updated";
@@ -164,12 +169,12 @@
     }
 
     const items = [...active.children];
-    Promise.all(items.map(li => Promise.all([lastCommit(li), codeSize(li)]))).then(results => {
-      const projects = items.map((li, i) => ({ li, date: results[i][0], size: results[i][1] }));
+    Promise.all(items.map(li => Promise.all([lastCommit(li), codeStats(li)]))).then(results => {
+      const projects = items.map((li, i) => ({ li, date: results[i][0], code: results[i][1] }));
       // Newest first; projects without a date keep their order at the end.
       projects.sort((a, b) => (b.date ?? -Infinity) - (a.date ?? -Infinity) || 0);
-      for (const { li, date, size } of projects) {
-        showInfo(li, date, size);
+      for (const { li, date, code } of projects) {
+        showInfo(li, date, code);
         (date && date < cutoff ? archive : active).append(li);
       }
       const hasArchive = archive.children.length > 0;
