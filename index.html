@@ -123,35 +123,53 @@
     const cutoff = new Date();
     cutoff.setMonth(cutoff.getMonth() - 6);
 
-    function lastCommit(li) {
+    function github(li, path) {
       const source = li.querySelector('a[href^="https://github.com/"]');
       if (!source) return Promise.resolve(null);
       const repo = new URL(source.href).pathname.slice(1);
-      return fetch(`https://api.github.com/repos/${repo}/commits?per_page=1`)
+      return fetch(`https://api.github.com/repos/${repo}${path}`)
         .then(r => r.ok ? r.json() : Promise.reject())
-        .then(([commit]) => new Date(commit.commit.committer.date))
         .catch(() => null);
     }
 
-    function showDate(li, date) {
-      const time = document.createElement("time");
-      time.dateTime = date.toISOString();
-      time.textContent = date.toLocaleDateString("sv-SE", {
-        day: "numeric", month: "short", year: "numeric"
-      }).replace(".", "");
+    const lastCommit = li => github(li, "/commits?per_page=1")
+      .then(commits => commits?.[0] ? new Date(commits[0].commit.committer.date) : null);
+
+    // Sum of bytes per language as reported by GitHub.
+    const codeSize = li => github(li, "/languages")
+      .then(langs => langs ? Object.values(langs).reduce((a, b) => a + b, 0) : null);
+
+    function formatSize(bytes) {
+      const [value, unit] = bytes >= 1e6 ? [bytes / 1e6, "MB"] : [bytes / 1e3, "kB"];
+      const digits = value < 10 ? 1 : 0;
+      return value.toLocaleString("sv-SE", { maximumFractionDigits: digits }) + " " + unit;
+    }
+
+    function showInfo(li, date, size) {
+      const parts = [];
+      if (date) {
+        const time = document.createElement("time");
+        time.dateTime = date.toISOString();
+        time.textContent = date.toLocaleDateString("sv-SE", {
+          day: "numeric", month: "short", year: "numeric"
+        }).replace(".", "");
+        parts.push(["Uppdaterad ", time]);
+      }
+      if (size) parts.push([formatSize(size) + " kod"]);
+      if (!parts.length) return;
       const line = document.createElement("span");
       line.className = "updated";
-      line.append("Uppdaterad ", time);
+      parts.forEach((part, i) => line.append(...(i ? [" · "] : []), ...part));
       li.append(line);
     }
 
     const items = [...active.children];
-    Promise.all(items.map(lastCommit)).then(dates => {
-      const projects = items.map((li, i) => ({ li, date: dates[i] }));
+    Promise.all(items.map(li => Promise.all([lastCommit(li), codeSize(li)]))).then(results => {
+      const projects = items.map((li, i) => ({ li, date: results[i][0], size: results[i][1] }));
       // Newest first; projects without a date keep their order at the end.
       projects.sort((a, b) => (b.date ?? -Infinity) - (a.date ?? -Infinity) || 0);
-      for (const { li, date } of projects) {
-        if (date) showDate(li, date);
+      for (const { li, date, size } of projects) {
+        showInfo(li, date, size);
         (date && date < cutoff ? archive : active).append(li);
       }
       const hasArchive = archive.children.length > 0;
