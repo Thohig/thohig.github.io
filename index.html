@@ -73,6 +73,10 @@
     a:hover {
       color: var(--accent);
     }
+    .updated {
+      display: block;
+      font-size: .85rem;
+    }
   </style>
 </head>
 <body>
@@ -102,5 +106,27 @@
     </li>
   </ul>
   </main>
+  <script>
+    for (const li of document.querySelectorAll("main li")) {
+      const source = li.querySelector('a[href^="https://github.com/"]');
+      if (!source) continue;
+      const repo = new URL(source.href).pathname.slice(1);
+      fetch(`https://api.github.com/repos/${repo}/commits?per_page=1`)
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(([commit]) => {
+          const date = new Date(commit.commit.committer.date);
+          const time = document.createElement("time");
+          time.dateTime = date.toISOString();
+          time.textContent = date.toLocaleDateString("sv-SE", {
+            day: "numeric", month: "short", year: "numeric"
+          }).replace(".", "");
+          const line = document.createElement("span");
+          line.className = "updated";
+          line.append("Uppdaterad ", time);
+          li.append(line);
+        })
+        .catch(() => {});
+    }
+  </script>
 </body>
 </html>
