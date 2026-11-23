@@ -73,11 +73,18 @@
     a:hover {
       color: var(--accent);
     }
+    main ul {
+      transition: opacity .3s;
+    }
+    .loading main ul {
+      opacity: 0;
+    }
     .updated {
       display: block;
       font-size: .85rem;
     }
   </style>
+  <script>document.documentElement.classList.add("loading");</script>
 </head>
 <body>
   <main>
@@ -111,6 +118,8 @@
   <script>
     const active = document.getElementById("active");
     const archive = document.getElementById("archive");
+    const reveal = () => document.documentElement.classList.remove("loading");
+    setTimeout(reveal, 1000);
     const cutoff = new Date();
     cutoff.setMonth(cutoff.getMonth() - 6);
 
@@ -148,6 +157,7 @@
       const hasArchive = archive.children.length > 0;
       archive.hidden = !hasArchive;
       document.getElementById("archive-heading").hidden = !hasArchive;
+      reveal();
     });
   </script>
 </body>
