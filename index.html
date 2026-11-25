@@ -171,22 +171,34 @@
       li.append(line);
     }
 
+    // Whether the project's GitHub Pages link still answers (same origin, so status is readable).
+    function pageWorks(li) {
+      const link = li.firstElementChild;
+      if (link?.tagName !== "A") return Promise.resolve(false);
+      return fetch(link.href, { method: "HEAD", cache: "no-store" })
+        .then(r => r.ok)
+        .catch(() => false);
+    }
+
     const items = [...active.children];
-    Promise.all(items.map(li => Promise.all([lastCommit(li), codeStats(li), isArchived(li)]))).then(results => {
+    Promise.all(items.map(li => Promise.all([lastCommit(li), codeStats(li), isArchived(li), pageWorks(li)]))).then(results => {
       const projects = items.map((li, i) => {
-        const [date, code, archived] = results[i];
-        return { li, date, code, archived };
+        const [date, code, archived, works] = results[i];
+        return { li, date, code, archived, works };
       });
       // Newest first; projects without a date keep their order at the end.
       projects.sort((a, b) => (b.date ?? -Infinity) - (a.date ?? -Infinity) || 0);
-      for (const { li, date, code, archived } of projects) {
+      for (const { li, date, code, archived, works } of projects) {
         if (archived || (date && date < cutoff)) {
-          // Archived projects show only name, description and source link.
-          const name = li.firstElementChild;
-          const title = document.createElement("span");
-          title.className = "name";
-          title.textContent = name.textContent;
-          name.replaceWith(title);
+          // Archived projects show name, description and source link,
+          // plus the Pages link only if it still works.
+          if (!works) {
+            const name = li.firstElementChild;
+            const title = document.createElement("span");
+            title.className = "name";
+            title.textContent = name.textContent;
+            name.replaceWith(title);
+          }
           archive.append(li);
         } else {
           showInfo(li, date, code);
