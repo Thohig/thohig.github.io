@@ -67,7 +67,8 @@
       text-decoration-thickness: 2px;
       text-underline-offset: 3px;
     }
-    li > a:first-child {
+    li > a:first-child,
+    li > .name {
       font-weight: 600;
     }
     a:hover {
@@ -179,9 +180,18 @@
       // Newest first; projects without a date keep their order at the end.
       projects.sort((a, b) => (b.date ?? -Infinity) - (a.date ?? -Infinity) || 0);
       for (const { li, date, code, archived } of projects) {
-        // Projects archived on GitHub go to the archive with name, description and source link only.
-        if (!archived) showInfo(li, date, code);
-        (archived || (date && date < cutoff) ? archive : active).append(li);
+        if (archived || (date && date < cutoff)) {
+          // Archived projects show only name, description and source link.
+          const name = li.firstElementChild;
+          const title = document.createElement("span");
+          title.className = "name";
+          title.textContent = name.textContent;
+          name.replaceWith(title);
+          archive.append(li);
+        } else {
+          showInfo(li, date, code);
+          active.append(li);
+        }
       }
       const hasArchive = archive.children.length > 0;
       archive.hidden = !hasArchive;
